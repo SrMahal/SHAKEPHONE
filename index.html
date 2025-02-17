@@ -3,43 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js com Sensor do Celular</title>
+    <title>Three.js com Giroscópio</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body style="margin: 0; overflow: hidden; text-align: center;">
+    <button id="start" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        padding: 15px 30px; font-size: 18px;">Ativar Sensores</button>
+
     <script>
-        // Criando a cena
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        let scene, camera, renderer, cube;
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-        // Criando um cubo
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
 
-        camera.position.z = 5;
+            camera.position.z = 5;
 
-        // Função para capturar a rotação do celular
-        window.addEventListener("deviceorientation", (event) => {
-            let gamma = event.gamma; // Inclinação esquerda-direita
-            let beta = event.beta;   // Inclinação para frente e para trás
-            
-            // Convertendo os valores para uma rotação no cubo
-            cube.rotation.x = beta * (Math.PI / 180);
-            cube.rotation.y = gamma * (Math.PI / 180);
-        });
+            animate();
+        }
 
-        // Loop de animação
         function animate() {
             requestAnimationFrame(animate);
             renderer.render(scene, camera);
         }
-        animate();
+
+        function handleOrientation(event) {
+            let gamma = event.gamma; // Esquerda/Direita
+            let beta = event.beta;   // Frente/Trás
+
+            cube.rotation.x = beta * (Math.PI / 180);
+            cube.rotation.y = gamma * (Math.PI / 180);
+        }
+
+        document.getElementById("start").addEventListener("click", async function () {
+            if (typeof DeviceMotionEvent.requestPermission === "function") {
+                // iOS precisa de permissão explícita
+                const permissionState = await DeviceMotionEvent.requestPermission();
+                if (permissionState === "granted") {
+                    window.addEventListener("deviceorientation", handleOrientation);
+                    document.getElementById("start").style.display = "none"; // Esconde o botão
+                } else {
+                    alert("Permissão negada. Ative os sensores nas configurações do Safari.");
+                }
+            } else {
+                // Android e navegadores que não precisam de permissão
+                window.addEventListener("deviceorientation", handleOrientation);
+                document.getElementById("start").style.display = "none";
+            }
+        });
+
+        init();
     </script>
 </body>
 </html>
